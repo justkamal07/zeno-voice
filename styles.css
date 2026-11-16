@@ -78,8 +78,8 @@ button, input, select { font: inherit; color: inherit; }
 @media (max-width: 900px) { .phone-col { position: static; } }
 .phone { width: 360px; height: 740px; border-radius: 54px; background: #1B1F1B; padding: 11px; box-shadow: 0 30px 60px -30px rgba(18,22,15,.45), inset 0 0 0 1.5px #3A403A; position: relative; }
 @media (max-width: 400px) { .phone { width: calc(100vw - 32px); height: auto; aspect-ratio: 360/740; } }
-.screen { position: relative; height: 100%; border-radius: 44px; overflow: hidden; background: var(--paper); color: var(--ink); display: flex; flex-direction: column; }
-:root[data-theme="dark"] .screen { background: #F2F1EC; color: #12160F; }
+.screen { position: relative; height: 100%; border-radius: 44px; overflow: hidden; background: #F2F1EC; color: #12160F; display: flex; flex-direction: column; }
+.screen .eb { color: #5C6158; }
 .statusbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px 0; font: 600 14px/1 var(--f-ui); height: 46px; color: #12160F; }
 .statusbar .icons { display: flex; gap: 5px; align-items: center; }
 .statusbar .icons i { display: block; width: 16px; height: 10px; background: #12160F; border-radius: 2px; opacity: .85; }
