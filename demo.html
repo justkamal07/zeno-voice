@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zeno Voice · Demo video</title>
+<meta name="description" content="A 90-second walkthrough of Zeno Voice, the Gemini Live voice agent for ZenMode OS.">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .vwrap { max-width: 1100px; margin: 0 auto; padding: 28px 16px 56px; display: flex; flex-direction: column; gap: 18px; }
+  video { width: 100%; height: auto; border-radius: 18px; background: #0F130F; border: 1px solid var(--hair); display: block; }
+  .vwrap h1 { font: 500 clamp(26px, 4vw, 40px)/1.1 var(--f-brand); letter-spacing: -.02em; margin: 4px 0 0; }
+  .vwrap p { margin: 0; color: var(--ink-soft); max-width: 70ch; }
+  .links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .links a { text-decoration: none; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><img src="assets/mark.svg" width="24" height="24" alt=""><span>ZenMode <span class="os">OS</span></span></a>
+  <span class="tag">Zeno Voice · demo video</span>
+</header>
+<main class="vwrap">
+  <div class="eb">Build with Google Gemini 2026 · Open Innovation · Team YC Hackers</div>
+  <h1>Zeno Voice, in about 90 seconds</h1>
+  <video controls playsinline preload="metadata" poster="demo/poster.jpg">
+    <source src="demo/zeno-voice-demo.mp4" type="video/mp4">
+  </video>
+  <p>Five moments: a pickup, a Tanglish intent, a Hinglish request cut off mid-sentence, a status check, and a Tamil evening note that becomes a shareable Zen Card. This walkthrough is recorded from the prototype's demo replay mode: the speech is scripted and every tool call runs through the real ZenMode ledger code. Live mode runs the same loop through the Gemini Live API with your own key and shows first-audio latency.</p>
+  <div class="links">
+    <a class="btn primary" href="./?mode=live">Try it live</a>
+    <a class="btn" href="./">Watch the replay in the browser</a>
+    <a class="btn" href="https://github.com/justkamal07/zeno-voice">Code on GitHub</a>
+    <a class="btn" href="demo/zeno-voice-demo.mp4" download>Download MP4</a>
+  </div>
+</main>
+</body>
+</html>

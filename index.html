@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zeno Voice · ZenMode OS</title>
+<meta name="description" content="Zeno Voice: a real-time Gemini Live voice agent for ZenMode OS. Say what you picked up your phone for, in Tamil, Hindi, Tanglish, Hinglish or English, and Zeno acts on it.">
+<meta name="theme-color" content="#F2F1EC">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="https://zenmodeos.com/" aria-label="ZenMode OS">
+    <svg viewBox="0 0 32.18 32.18" aria-hidden="true"><defs><linearGradient id="gMark" x1="31.41" y1="32.18" x2="15.32" y2="16.09" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0B5C12"/><stop offset="1" stop-color="#2AA136"/></linearGradient></defs><path id="markPath" fill="url(#gMark)" fill-rule="evenodd" d=""/></svg>
+    <span>ZenMode <span class="os">OS</span></span>
+  </a>
+  <span class="tag">Zeno Voice · prototype</span>
+  <span class="sp"></span>
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" data-mode="demo" aria-pressed="true">Demo replay</button>
+    <button type="button" data-mode="live" aria-pressed="false">Live · Gemini</button>
+  </div>
+  <a class="gh" href="https://github.com/justkamal07/zeno-voice">GitHub</a>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eb">Build with Google Gemini 2026 · Open Innovation · Team YC Hackers</div>
+      <h1>Say why you picked it up<span class="dot">.</span> Zeno does the rest.</h1>
+    </div>
+    <p>About half of all phone pickups happen out of habit. Zeno lives in the notch, asks one question in your language, and turns the answer into a real ZenMode action through the Gemini Live API: an intent timer, a focus session, a pause, a Zen Card.</p>
+  </section>
+
+  <div class="grid">
+    <section class="phone-col" aria-label="Phone">
+      <div class="phone">
+        <div class="screen">
+          <div class="island" id="island" data-state="compact">
+            <div class="isl-zeno" id="islZeno"></div>
+            <div class="isl-main">
+              <div class="isl-line" id="islLine">What are you here for?</div>
+              <div class="isl-sub" id="islSub">Zeno · listening</div>
+            </div>
+            <div class="isl-right num" id="islRight">7.2</div>
+          </div>
+          <div class="statusbar"><span class="num" id="clock">10:02</span><span class="icons"><i></i><i></i></span></div>
+          <div class="home">
+            <div class="hello"><span class="eb" id="dayline">Friday · week 47</span><b>Good evening, Kamal</b></div>
+            <div class="w" aria-live="polite">
+              <div class="eb">Zen Score · today</div>
+              <div class="score-row"><span class="big num" id="score">7.2</span><span class="of">/10</span><span class="pill" id="delta">+0.0 today</span></div>
+              <div class="week" id="week"></div>
+              <div class="week-labels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+              <div class="line" id="weekLine">3 of 4 good days. Keep today above 6 to win the week.</div>
+            </div>
+            <div class="w">
+              <div class="eb">Right now</div>
+              <div class="now-list" id="nowList"><div class="empty">Nothing running. Pick up the phone and tell Zeno why.</div></div>
+            </div>
+            <div id="cardSlot"></div>
+            <div class="w promise">
+              <div class="eb" id="promiseLabel">2h 22m of your 4h promise</div>
+              <div class="bar"><i id="promiseBar" style="width:59%"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="controls" id="demoControls">
+        <button class="btn primary" id="playBtn" type="button">Play the demo</button>
+        <button class="btn" id="resetBtn" type="button">Reset</button>
+      </div>
+      <div class="controls" id="liveControls" hidden>
+        <button class="btn primary" id="pickupBtn" type="button" disabled>Pick up the phone</button>
+        <button class="btn" id="micBtn" type="button" disabled aria-pressed="false"><span class="dotr"></span><span id="micLabel">Mic off</span></button>
+        <span class="meter" aria-hidden="true"><i id="meter"></i></span>
+      </div>
+    </section>
+
+    <section class="side">
+      <div class="panel" id="livePanel" hidden>
+        <h2>Connect to the Gemini Live API <span class="eb">native audio</span></h2>
+        <p class="lede">Your key stays in this tab's memory and goes only to generativelanguage.googleapis.com. Nothing is stored. Get a key at aistudio.google.com. When this page is served by the Cloud Run token server in <code>/server</code>, leave the key empty: it fetches a single-use ephemeral token instead.</p>
+        <div class="setup">
+          <label class="full">Gemini API key<input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a Gemini API key"></label>
+          <label>Model<select id="model"></select></label>
+          <label>Zeno's voice<select id="voice"></select></label>
+          <div class="row">
+            <button class="btn primary" id="connectBtn" type="button">Connect</button>
+            <span class="status" id="liveStatus">Not connected</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Conversation <span class="eb" id="convoMode">replay · scripted speech</span></h2>
+        <div class="convo" id="convo" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Actions on the ZenMode backend <span class="eb">function calls</span></h2>
+        <p class="lede">Every row is a Gemini function call executed against the ZenMode ledger and returned to the model as a tool response.</p>
+        <div class="acts" id="acts"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Measured outcome <span class="eb">from the ledger</span></h2>
+        <div class="kpis">
+          <div class="kpi"><b class="num" id="kScore">+0.0</b><span>Zen Score today</span></div>
+          <div class="kpi"><b class="num" id="kIntent">29%</b><span>Pickups with an intent</span></div>
+          <div class="kpi"><b class="num" id="kMin">0</b><span>Minutes protected</span></div>
+          <div class="kpi"><b class="num" id="kLat">—</b><span id="kLatLabel">First audio (live only)</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <span>ZenMode OS · open source, GPLv3</span>
+    <a href="https://github.com/justkamal07/zeno-voice#readme">How it works</a>
+    <a href="demo.html">Demo video</a>
+    <a href="https://zenmodeos.com/">zenmodeos.com</a>
+    <span>Screen Time stays on the device. Demo data is sample data.</span>
+  </footer>
+</div>
+
+<div class="capbar" id="capbar"><span class="n num" id="capN">1</span><span id="capText"></span></div>
+<div class="titlecard" id="titleCard"></div>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
