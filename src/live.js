@@ -110,6 +110,7 @@ export class LiveSession extends EventTarget {
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
     this.stream = stream;
+    if (this.tapDest && !this.micTap) { this.micTap = this.playCtx.createMediaStreamSource(stream); this.micTap.connect(this.tapDest); }
     this.micCtx = new AudioContext();
     await this.micCtx.audioWorklet.addModule(new URL('./mic-worklet.js', import.meta.url));
     const src = this.micCtx.createMediaStreamSource(stream);
@@ -223,6 +224,7 @@ export class LiveSession extends EventTarget {
     const src = this.playCtx.createBufferSource();
     src.buffer = buf;
     src.connect(this.playCtx.destination);
+    if (this.tapDest) src.connect(this.tapDest);
     const at = Math.max(this.playCtx.currentTime + 0.02, this.nextPlay);
     src.start(at);
     this.nextPlay = at + buf.duration;
@@ -232,6 +234,15 @@ export class LiveSession extends EventTarget {
       this.sources.delete(src);
       if (!this.sources.size) this.emit('zeno-quiet', {});
     };
+  }
+
+  // One audio stream with the user's mic and Zeno's voice, for recording a live demo.
+  audioTap() {
+    if (!this.tapDest) {
+      this.tapDest = this.playCtx.createMediaStreamDestination();
+      if (this.stream) { this.micTap = this.playCtx.createMediaStreamSource(this.stream); this.micTap.connect(this.tapDest); }
+    }
+    return this.tapDest.stream;
   }
 
   stopPlayback() {

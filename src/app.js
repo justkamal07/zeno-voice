@@ -195,6 +195,30 @@ function caption(n, text) {
   bar.classList.add('on');
 }
 
+/* ---------- replay voices (synthesized, see src/demo.js) ---------- */
+const VOICE_BASE = 'demo/voice/';
+let durations = {};
+fetch(VOICE_BASE + 'durations.json').then((r) => (r.ok ? r.json() : {})).then((d) => { durations = d; }).catch(() => {});
+let voicesOn = !params.has('mute');
+let currentClip = null;
+const mark = (kind, extra = '') => { if (REC) console.log(`EVT ${kind} ${Date.now()} ${extra}`); };
+const clipMs = (step) => (step.clip && durations[step.clip] ? Math.round(durations[step.clip] * 1000) : step.ms);
+function fadeOut(a) {
+  if (!a) return;
+  let v = a.volume;
+  const t = setInterval(() => { v -= 0.25; if (v <= 0) { a.pause(); clearInterval(t); } else a.volume = v; }, 15);
+}
+function playClip(id, maxMs = 0) {
+  if (!id) return null;
+  mark('CLIP', `${id} ${maxMs}`);
+  if (!voicesOn || REC) return null; // the recorder mixes the audio track afterwards
+  const a = new Audio(VOICE_BASE + id + '.mp3');
+  a.play().catch(() => {});
+  currentClip = a;
+  if (maxMs) setTimeout(() => fadeOut(a), maxMs / SPEED);
+  return a;
+}
+
 async function playDemo() {
   if (playing) return;
   resetAll();
@@ -217,10 +241,13 @@ async function playDemo() {
       case 'zeno': {
         let text = step.text.replace('{score}', ledger.state.zenScore.toFixed(1)).replace('{delta}', (ledger.state.zenScore - ledger.state.startScore).toFixed(1));
         setFeeling(step.feel || 'pleasant');
-        islandState('expanded', text, step.cut ? 'Zeno · speaking' : 'Zeno · speaking');
+        islandState('expanded', text, 'Zeno · speaking');
         island.classList.add('talking');
         const el = addMsg('zeno', '', { lang: step.lang });
-        await typeInto(el, text, step.ms);
+        const dur = step.cut ? step.ms : clipMs(step);
+        playClip(step.clip, step.cut ? step.ms : 0);
+        await typeInto(el, text, Math.max(300, dur - 250));
+        await sleep(step.cut ? 0 : 250);
         island.classList.remove('talking');
         if (step.cut) { el.classList.add('cut'); break; }
         hop();
@@ -233,20 +260,24 @@ async function playDemo() {
         setFeeling('listening');
         addSys('↯ Interrupted · Zeno stops mid-sentence and listens', 'int');
         islandState('expanded', 'Listening…', 'Zeno · listening');
-        await sleep(500);
+        await sleep(150);
         break;
       }
       case 'user': {
         setFeeling('listening');
         islandState('expanded', '…', 'Zeno · listening');
         const el = addMsg('user', '', { lang: step.lang, tag: step.tag });
-        await typeInto(el, step.text, step.ms, (sofar) => { $('islLine').textContent = sofar.length > 70 ? '…' + sofar.slice(-68) : sofar; });
+        const dur = clipMs(step);
+        playClip(step.clip);
+        await typeInto(el, step.text, Math.max(300, dur - 250), (sofar) => { $('islLine').textContent = sofar.length > 70 ? '…' + sofar.slice(-68) : sofar; });
+        await sleep(250);
         setFeeling('thinking');
         islandState('expanded', 'On it…', 'Gemini · reasoning');
         await sleep(450);
         break;
       }
       case 'tool': {
+        mark('TOOL', step.name);
         runTool(step.name, step.args);
         await sleep(650);
         break;
@@ -281,6 +312,7 @@ function tickClock() {
 
 function resetAll() {
   stopFlag = true;
+  if (currentClip) { try { currentClip.pause(); } catch {} currentClip = null; }
   ledger = createLedger(() => clockNow());
   convo.innerHTML = '';
   $('acts').innerHTML = '';
@@ -327,6 +359,7 @@ async function connectLive() {
     setStatus(`Connected · ${modelSel.value}`, 'ok');
     $('pickupBtn').disabled = false;
     $('micBtn').disabled = false;
+    $('recBtn').disabled = false;
     $('connectBtn').textContent = 'Reconnect';
   } catch (e) {
     setStatus(e.message, 'err');
@@ -376,6 +409,8 @@ function wireLive(s) {
   s.addEventListener('closed', ({ detail }) => {
     setStatus(`Disconnected (${detail.code}) ${detail.reason || ''}`, detail.code === 1000 ? '' : 'err');
     $('pickupBtn').disabled = true; $('micBtn').disabled = true;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    $('recBtn').disabled = true;
     $('micBtn').classList.remove('on'); $('micLabel').textContent = 'Mic off';
   });
   s.addEventListener('log', ({ detail }) => addSys(detail.text, detail.level === 'error' ? 'int' : ''));
@@ -407,6 +442,41 @@ async function pickup() {
   live.cue(`[ZenMode event] Kamal just picked up the phone at ${t.toTimeString().slice(0, 5)}. Greet him by name in one short line and ask what he is here for.`);
 }
 
+/* ---------- record a real live demo: this tab + your mic + Zeno's voice ---------- */
+let recorder = null, recTimer = null;
+async function toggleRecord() {
+  if (recorder) { recorder.stop(); return; }
+  if (!live || !live.ready) { setStatus('Connect first, then record', 'err'); return; }
+  if (!live.stream) await toggleMic();
+  let display;
+  try {
+    display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include' });
+  } catch (e) { setStatus('Screen capture was not allowed', 'err'); return; }
+  const stream = new MediaStream([...display.getVideoTracks(), ...live.audioTap().getAudioTracks()]);
+  const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
+  const chunks = [];
+  recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4000000 });
+  recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    display.getTracks().forEach((t) => t.stop());
+    clearInterval(recTimer);
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `zeno-voice-live-demo-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.webm`;
+    document.body.appendChild(a); a.click(); a.remove();
+    addSys(`Recording saved · ${(blob.size / 1e6).toFixed(1)} MB · ${a.download}`);
+    $('recBtn').classList.remove('on'); $('recLabel').textContent = 'Record live demo';
+    recorder = null;
+  };
+  display.getVideoTracks()[0].addEventListener('ended', () => { if (recorder && recorder.state !== 'inactive') recorder.stop(); });
+  recorder.start(1000);
+  const t0 = Date.now();
+  $('recBtn').classList.add('on');
+  recTimer = setInterval(() => { const sec = Math.floor((Date.now() - t0) / 1000); $('recLabel').textContent = `Stop recording · ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }, 500);
+  addSys('● Recording this tab, your mic and Zeno. Press Pick up the phone and talk.');
+}
+
 /* ---------- mode switch ---------- */
 function setMode(mode) {
   document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
@@ -414,7 +484,7 @@ function setMode(mode) {
   $('livePanel').hidden = !isLive;
   $('liveControls').hidden = !isLive;
   $('demoControls').hidden = isLive;
-  $('convoMode').textContent = isLive ? 'live · Gemini transcripts' : 'replay · scripted speech, real tool calls';
+  $('convoMode').textContent = isLive ? 'live · Gemini transcripts' : 'replay · synthesized voices, real tool calls';
   if (!isLive && live) { live.close(); live = null; setStatus('Not connected'); }
   resetAll();
   if (isLive) { simClock = null; tickClock(); }
@@ -422,22 +492,31 @@ function setMode(mode) {
 }
 document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 $('playBtn').addEventListener('click', playDemo);
+$('voiceBtn').addEventListener('click', () => {
+  voicesOn = !voicesOn;
+  $('voiceBtn').setAttribute('aria-pressed', String(voicesOn));
+  $('voiceBtn').textContent = voicesOn ? 'Voices on' : 'Voices off';
+  if (!voicesOn && currentClip) currentClip.pause();
+});
 $('resetBtn').addEventListener('click', () => { resetAll(); playing = false; $('playBtn').disabled = false; $('playBtn').textContent = 'Play the demo'; });
 $('connectBtn').addEventListener('click', connectLive);
 $('micBtn').addEventListener('click', toggleMic);
 $('pickupBtn').addEventListener('click', pickup);
+$('recBtn').addEventListener('click', toggleRecord);
 setInterval(() => { if (!simClock) tickClock(); if (live || ledger.state.sessions.some((x) => !x.endedAt)) { renderPhone(); if (island.dataset.state === 'timer') restIsland(); } }, 1000);
 
 /* ---------- recording: title and end cards ---------- */
 function titleCard() {
   const t = $('titleCard');
-  t.innerHTML = `${zenoSVG({ feeling: 'happy' })}<div class="eb">ZenMode OS · Build with Google Gemini 2026 · Open Innovation</div><h1>Zeno Voice<span class="dot">.</span></h1><p>Say why you picked up your phone, in your own language. Gemini Live understands and ZenMode acts.</p><div class="small">Prototype walkthrough · demo replay mode: scripted speech, real tool execution on the ZenMode ledger.<br>Live mode streams the same turns through the Gemini Live API.</div>`;
+  t.innerHTML = `${zenoSVG({ feeling: 'happy' })}<div class="eb">ZenMode OS · Build with Google Gemini 2026 · Open Innovation</div><h1>Zeno Voice<span class="dot">.</span></h1><p>Say why you picked up your phone, in your own language. Gemini Live understands and ZenMode acts.</p><div class="small">Prototype walkthrough in demo replay mode: scripted turns with synthesized voices (Kokoro TTS),<br>and every tool call running on the real ZenMode ledger code. Live mode streams the same loop through the Gemini Live API.</div>`;
   t.classList.add('on');
+  mark('TITLE');
 }
 function endCard() {
   const t = $('titleCard');
   t.innerHTML = `${zenoSVG({ feeling: 'happy', skin: 'gold' })}<h1>Quiet the noise<span class="dot">.</span></h1><p>5 moments · 4 languages · 1 interruption · 7 tool calls on the ZenMode backend.</p><div class="small">Try it: justkamal07.github.io/zeno-voice · Code: github.com/justkamal07/zeno-voice<br>Team YC Hackers · Kamalraaj Senthilkumar & Srinivas Thammana</div>`;
   t.classList.add('on');
+  mark('END');
 }
 
 /* ---------- boot ---------- */
