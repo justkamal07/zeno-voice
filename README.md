@@ -88,13 +88,13 @@ On Cloud Run, leave the key field empty: the page fetches `/token` and connects 
 
 ## Cost per check-in
 
-A check-in is about 12 s of the user's speech and 6 s of Zeno's. At Gemini Live audio rates of about $0.005 per input minute and $0.018 per output minute, plus a few thousand context tokens, one check-in costs roughly **$0.004 (about ₹0.35)**. A ZenMode for Teams seat at $50 a year with four check-ins a workday spends about $4 a year on Gemini, under 10% of the seat price.
+A check-in is about 12 s of the user's speech, 6 s of Zeno's and a few thousand context tokens. At Gemini Live rates of about $0.005 per input audio minute, $0.018 per output audio minute and $0.75 per million text tokens, one check-in costs roughly **$0.005 (about ₹0.44)**. With four check-ins and one evening note per workday, a ZenMode for Teams seat costs about **$7.9 a year** in Gemini usage, about 16% of a $50 seat. These are estimates, not quotes.
 
 ## Status, honestly
 
-- The voice loop, tool calling, interruptions, transcripts and latency meter are real and run against the Gemini Live API with your key. The client was also tested end to end against a local mock of the Live wire protocol.
-- The ZenMode backend is mocked in the browser (a hackathon-allowed mock). In the product it is the existing Firebase backend that the Android, iOS and desktop apps already sync through.
-- The demo video shows **demo replay** mode: scripted speech, real tool execution.
+- The Live client (setup, mic streaming, playback, transcripts, tool calls, interruptions, latency) follows the documented Gemini Live API protocol and was tested end to end against a local mock of that wire protocol with a fake microphone. Bring your own key to hear Zeno for real.
+- The ZenMode backend is mocked in the browser, as the challenge allows. In the product it is the Firebase backend that the Android, iOS and desktop apps already sync through.
+- The demo video shows demo replay mode: scripted speech, real tool execution on the ledger code.
 
 ## License and credits
 
