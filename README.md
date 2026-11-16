@@ -28,7 +28,8 @@ ZenMode already makes intentional use easier on Android (launcher, Zen Score, 7-
 Open the [live prototype](https://justkamal07.github.io/zeno-voice/) and pick a mode:
 
 - **Live · Gemini.** Paste a Gemini API key (it stays in the tab's memory and goes only to `generativelanguage.googleapis.com`), press **Pick up the phone** and talk. The page streams 16 kHz PCM from your mic to the Gemini Live API over a WebSocket, plays Zeno's 24 kHz native-audio reply, shows both transcripts with their language, executes Zeno's function calls on the ZenMode ledger, handles barge-in interruptions and measures **first-audio latency** from the end of your speech.
-- **Demo replay.** The same five moments without a mic or key. Speech is scripted; every tool call still runs through the real ledger code. This is what the demo video shows.
+- **Demo replay.** The same five moments without a mic or key, with synthesized voices (Kokoro TTS: an Indian female voice for Zeno, an Indian male voice for Kamal). The turns are scripted; every tool call still runs through the real ledger code. This is what the demo video shows.
+- **Record live demo.** In live mode, press **Record live demo**, pick this tab, then talk to Zeno. The page records the tab, your mic and Zeno's voice with MediaRecorder and downloads a .webm when you stop.
 
 The five moments:
 
@@ -67,7 +68,7 @@ flowchart LR
 | `src/mic-worklet.js` | AudioWorklet: resamples the mic to 16 kHz and packs 40 ms PCM16 chunks |
 | `src/agent.js` | Zeno's system instruction, voices, models and function declarations |
 | `src/ledger.js` | ZenMode backend, mocked in the browser for the prototype |
-| `src/demo.js` | The scripted replay |
+| `src/demo.js`, `demo/voice/` | The scripted replay and its synthesized voice clips |
 | `src/zeno.js` | Zeno, drawn from the ZenMode mark |
 | `server/index.js`, `Dockerfile` | Cloud Run service: serves the app and mints single-use Gemini Live ephemeral tokens so the API key never reaches the browser |
 | `docs/` | Idea and prototype decks |
@@ -94,8 +95,8 @@ A check-in is about 12 s of the user's speech, 6 s of Zeno's and a few thousand 
 
 - The Live client (setup, mic streaming, playback, transcripts, tool calls, interruptions, latency) follows the documented Gemini Live API protocol and was tested end to end against a local mock of that wire protocol with a fake microphone. Bring your own key to hear Zeno for real.
 - The ZenMode backend is mocked in the browser, as the challenge allows. In the product it is the Firebase backend that the Android, iOS and desktop apps already sync through.
-- The demo video shows demo replay mode: scripted speech, real tool execution on the ledger code.
+- The demo video shows demo replay mode: scripted turns with synthesized voices (Kokoro TTS, generated offline), real tool execution on the ledger code. It is not a recording of a live Gemini session; use **Record live demo** for that.
 
 ## License and credits
 
-GPL-3.0, like ZenMode OS. Zeno, the mark and the Albeit design system are ZenMode OS's own. Fonts: Geist and Noto Sans (OFL), Departure Mono (OFL), Clash Display (Indian Type Foundry, ITF Free Font License).
+GPL-3.0, like ZenMode OS. Zeno, the mark and the Albeit design system are ZenMode OS's own. Fonts: Geist and Noto Sans (OFL), Departure Mono (OFL), Clash Display (Indian Type Foundry, ITF Free Font License). Replay voices: Kokoro-82M (Apache-2.0), run offline with sherpa-onnx.

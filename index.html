@@ -69,12 +69,14 @@
       </div>
       <div class="controls" id="demoControls">
         <button class="btn primary" id="playBtn" type="button">Play the demo</button>
+        <button class="btn" id="voiceBtn" type="button" aria-pressed="true">Voices on</button>
         <button class="btn" id="resetBtn" type="button">Reset</button>
       </div>
       <div class="controls" id="liveControls" hidden>
         <button class="btn primary" id="pickupBtn" type="button" disabled>Pick up the phone</button>
         <button class="btn" id="micBtn" type="button" disabled aria-pressed="false"><span class="dotr"></span><span id="micLabel">Mic off</span></button>
         <span class="meter" aria-hidden="true"><i id="meter"></i></span>
+        <button class="btn" id="recBtn" type="button" disabled><span class="dotr"></span><span id="recLabel">Record live demo</span></button>
       </div>
     </section>
 
@@ -82,6 +84,7 @@
       <div class="panel" id="livePanel" hidden>
         <h2>Connect to the Gemini Live API <span class="eb">native audio</span></h2>
         <p class="lede">Your key stays in this tab's memory and goes only to generativelanguage.googleapis.com. Nothing is stored. Get a key at aistudio.google.com. When this page is served by the Cloud Run token server in <code>/server</code>, leave the key empty: it fetches a single-use ephemeral token instead.</p>
+        <p class="lede"><b>Record your own demo:</b> connect, press <b>Record live demo</b>, choose this tab, then <b>Pick up the phone</b> and talk to Zeno. Stop when you're done and a .webm of the screen, your voice and Zeno's voice downloads.</p>
         <div class="setup">
           <label class="full">Gemini API key<input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste a Gemini API key"></label>
           <label>Model<select id="model"></select></label>
@@ -94,7 +97,7 @@
       </div>
 
       <div class="panel">
-        <h2>Conversation <span class="eb" id="convoMode">replay · scripted speech</span></h2>
+        <h2>Conversation <span class="eb" id="convoMode">replay · synthesized voices, real tool calls</span></h2>
         <div class="convo" id="convo" aria-live="polite"></div>
       </div>
 
